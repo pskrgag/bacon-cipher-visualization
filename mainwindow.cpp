@@ -13,7 +13,7 @@ MainWindow::MainWindow(QWidget *parent) :
     this->resize(700,700);
     this->setMinimumSize(1200,900);
     ui->plainTextEdit->move(width()*3/4, height()/2);
-    ui->lineEdit_seq->setText("aaaaabbbbbabbbaabbababbaaababaab");
+    ui->lineEdit_seq->setText("aaaaabbbbbabbbaabbababbaaababaabaaaa");
     ui->pushButton_2->move(width()*3/4 + width()/20, height()/2 + height()/7);
     ui->pushButton_2->setEnabled(false);
     ui->plainTextEdit->setReadOnly(true);
