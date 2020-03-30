@@ -14,8 +14,12 @@
 #include <QMessageBox>
 #include <QThread>
 #include <QPropertyAnimation>
+#include <random>
+#include <map>
+#include <QFileDialog>
+#include <QTextStream>
 
-#include <iostream>
+
 namespace Ui {
 class MainWindow;
 }
@@ -32,7 +36,6 @@ public:
     }
     void setText(QString& str){
         moveCursor(QTextCursor::End);
-        std::cout << "Aaaa" << std::endl;
         insertPlainText(str);
         moveCursor (QTextCursor::End);
     }
@@ -81,6 +84,11 @@ private:
 public slots:
     void seq_but_clicked();
     void animation_but_clicked();
+    void generate_sequence_clicked();
+    void open_file_clicked();
+    void save_file_clicked();
+signals:
+    void file_opened();
 };
 
 #endif // MAINWINDOW_H
