@@ -13,3 +13,7 @@ $ mkdir build && cd build
 $ cmake .. && make 
 $ ./bacon
 ```
+# TODO
+  - Upload input text from file
+  - Export crypted text
+  - Randomly generated keys
