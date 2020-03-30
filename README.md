@@ -1,4 +1,4 @@
-# bacon-cipher-visualization
+# Bacon cipher visualization
 Simple Bacon cipher visualization
 
 # Requirements 
