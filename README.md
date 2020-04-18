@@ -13,5 +13,3 @@ $ mkdir build && cd build
 $ cmake .. && make 
 $ ./bacon
 ```
-# TODO
-  - Randomly generated keys
