@@ -29,7 +29,6 @@ static QString random_seq_generator(std::size_t size){
     for(int i = 6; i < size; ++i){
         int current = dis(generator);
         if(prefix_count[QString(sequence + current).mid(i-4, 4)] == 2){
-            std::cout << QString(sequence + current).mid(i-4, 4).toStdString() << std::endl;
             sequence+=static_cast<int>((current + qPow(-1, current - 97)));
             prefix_count[sequence.mid(i-3,4)]++;
         }
@@ -41,8 +40,7 @@ static QString random_seq_generator(std::size_t size){
 
 
     }
-
-    std::cout << sequence.toStdString() << std::endl;
+    if(!is_correct(sequence).first) return random_seq_generator(size);
     return sequence;
 
 }
@@ -50,14 +48,14 @@ static QString random_seq_generator(std::size_t size){
 MainWindow::MainWindow(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::MainWindow),
-    labels(36),
-    seq_labels(36)
+    labels(24),
+    seq_labels(24)
 {
     ui->setupUi(this);
     this->resize(700,700);
     this->setMinimumSize(1200,900);
     ui->plainTextEdit->move(width()*3/4, height()/2);
-    ui->lineEdit_seq->setText("aaaaabbbbbabbbaabbababbaaababaabaaaa");
+    ui->lineEdit_seq->setText(random_seq_generator(labels.size()));
     ui->pushButton_2->move(width()*3/4 + width()/20, height()/2 + height()/7);
     ui->pushButton_2->setEnabled(false);
     ui->pushButton_4->setEnabled(false);
@@ -72,14 +70,15 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->pushButton_4, &QPushButton::clicked, this, &MainWindow::open_file_clicked);
     connect(this, &MainWindow::file_opened, this, &MainWindow::animation_but_clicked);
     connect(ui->pushButton_5, &QPushButton::clicked, this, &MainWindow::save_file_clicked);
-
-    for(int j = 0; auto& i: labels){
+    int j =0;
+    for(auto& i: labels){
         if(j < 26) i = new MyLabel(QString(j + 65) , this);
         else i = new MyLabel(QString::number(j - 26) , this);
         j++;
     }
 
     answer = new MyPlainTextEdit(this);
+    answer->setReadOnly(true);
 
 }
 
@@ -106,7 +105,8 @@ void MainWindow::paintEvent(QPaintEvent* e){
     const double angle_per_label = 360/(labels.size() + 0.9);
     const double r = qMin(height()/3, width()/3);
     paint.drawEllipse(QPointF(width()/3, height()/2), r, r);
-    for(int j = 0 ;auto& i: labels){
+    int j = 0;
+    for(auto& i: labels){
         i->setGeometry(width()/3 - 8 + std::sin(angle_per_label * j * M_PI/175)*(r+30), height()/2 - 8 + std::cos(angle_per_label * j * M_PI/175)*(r+30) , 22, 25);
         i->show();
         i->setFont(font);
@@ -131,7 +131,9 @@ void MainWindow::seq_but_clicked(){
         auto tmp = is_correct(ui->lineEdit_seq->text());
         if(!tmp.first) QMessageBox::warning(this, "Warning","Sequence isn't correct: " + tmp.second + " is repeated!");
         else{
-            for(int j = 0; auto& i: seq_labels){
+            int j = 0;
+            for(auto& i: seq_labels){
+                if(i) delete i;
                 i = new MyLabel(QString(ui->lineEdit_seq->text()[j]), this);
                 j++;
                 i->show();
@@ -146,8 +148,19 @@ void MainWindow::animation_but_clicked(){
         QMessageBox::warning(this, "Warning","Field is empty!");
         return;
     }
+    for(int i = 0; i < ui->plainTextEdit->toPlainText().size(); ++i){
+        if(!((ui->plainTextEdit->toPlainText()[i] > 64 && ui->plainTextEdit->toPlainText()[i] < 91) || (ui->plainTextEdit->toPlainText()[i] > 96 && ui->plainTextEdit->toPlainText()[i] < 123)))
+        {
+            if(ui->plainTextEdit->toPlainText()[i] != ' ' && ui->plainTextEdit->toPlainText()[i] != '\n'){
+                QMessageBox::warning(this, "Warning","You only can use [a..z], [A..Z] and space symbols");
+                return;
+            }
+        }
+    }
+
     ui->pushButton_4->setEnabled(false);
     ui->pushButton_2->setEnabled(false);
+    ui->pushButton_5->setEnabled(false);
 
     QColor def = QColor(0,0,0);
     QVector<QPropertyAnimation*> animations(5);
@@ -158,6 +171,29 @@ void MainWindow::animation_but_clicked(){
     for(int i = 0; i < ui->plainTextEdit->toPlainText().size(); ++i){
         if(ui->plainTextEdit->toPlainText()[i] == ' ') answer->insertPlainText (" ");
         if(ui->plainTextEdit->toPlainText()[i] == '\n') answer->insertPlainText ("\n");
+        if(ui->plainTextEdit->toPlainText()[i] > 64 && ui->plainTextEdit->toPlainText()[i] < 91){
+             int j = ui->plainTextEdit->toPlainText().toStdString()[i] + 32 - 97;
+
+             QPropertyAnimation* outside_animation = new QPropertyAnimation(labels[j], "color", this);
+             outside_animation->setStartValue(QColor(255,0,0));
+             outside_animation->setEndValue(def);
+             outside_animation->setDuration(6000);
+             outside_animation->start(QAbstractAnimation::DeleteWhenStopped);
+             QString add;
+             for(int k = 0; k < 5; ++k){
+                animations[k] = new QPropertyAnimation(seq_labels[j - k >= 0 ? j - k : seq_labels.size() + (j - k) ], "color", this);
+                add+=seq_labels[j - k >= 0 ? j - k : seq_labels.size() + (j - k) ]->text();
+                animations[k]->setStartValue(QColor(0,255,0));
+                animations[k]->setEndValue(def);
+                animations[k]->setDuration(6000);
+                animations[k]->start(QAbstractAnimation::DeleteWhenStopped);
+             }
+
+             while (animations[4]->state() != QAbstractAnimation::Stopped) QCoreApplication::processEvents();
+             answer->insertPlainText(add);
+
+
+         }
         if(ui->plainTextEdit->toPlainText()[i] > 96 && ui->plainTextEdit->toPlainText()[i] < 123){
              int j = ui->plainTextEdit->toPlainText().toStdString()[i] - 97;
 
@@ -181,35 +217,12 @@ void MainWindow::animation_but_clicked(){
 
 
          }
-        if(ui->plainTextEdit->toPlainText()[i] > 47 && ui->plainTextEdit->toPlainText()[i] < 58){
-
-            int j = 25 + ui->plainTextEdit->toPlainText().toStdString()[i] - 47;
-
-            QPropertyAnimation* outside_animation = new QPropertyAnimation(labels[j], "color", this);
-            outside_animation->setStartValue(QColor(255,0,0));
-            outside_animation->setEndValue(def);
-            outside_animation->setDuration(6000);
-            outside_animation->start(QAbstractAnimation::DeleteWhenStopped);
-            QString add;
-            for(int k = 0; k < 5; ++k){
-               animations[k] = new QPropertyAnimation(seq_labels[j - k >= 0 ? j - k : seq_labels.size() + (j - k) ], "color", this);
-               add+=seq_labels[j - k >= 0 ? j - k : seq_labels.size() + (j - k) ]->text();
-               animations[k]->setStartValue(QColor(0,255,0));
-               animations[k]->setEndValue(def);
-               animations[k]->setDuration(6000);
-               animations[k]->start(QAbstractAnimation::DeleteWhenStopped);
-            }
-
-            while (animations[4]->state() != QAbstractAnimation::Stopped) QCoreApplication::processEvents();
-            answer->insertPlainText(add);
-
-
 
         }
-    }
-    ui->pushButton_5->setEnabled(true);
 
-
+        ui->pushButton_5->setEnabled(true);
+        ui->pushButton_4->setEnabled(true);
+        ui->pushButton_2->setEnabled(true);
 }
 void MainWindow::generate_sequence_clicked(){
     ui->lineEdit_seq->setText(random_seq_generator(labels.size()));
